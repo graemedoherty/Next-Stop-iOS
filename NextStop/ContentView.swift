@@ -26,6 +26,9 @@ struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedStation: Station? = nil
     
+    // Step 3 State
+    @State private var alarmIsSet: Bool = false
+    
     // Mock station data (temporary)
     let mockStations: [Station] = [
         Station(name: "Heuston", mode: .train),
@@ -119,7 +122,6 @@ struct ContentView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.horizontal)
                 
-                // Autocomplete Dropdown
                 if !filteredStations.isEmpty {
                     List(filteredStations) { station in
                         Button(action: {
@@ -140,23 +142,52 @@ struct ContentView: View {
                 .padding(.top)
             }
             
-            // MARK: - STEP 3: Placeholder (Next Step)
+            // MARK: - STEP 3: Set Alarm
             if step == 3 {
                 Text("Step 3")
                     .font(.headline)
                 
                 if let station = selectedStation {
-                    Text("Selected station:")
+                    Text("Your destination:")
                     Text(station.name)
                         .font(.title2)
                         .fontWeight(.bold)
+                        .padding(.bottom)
                 }
                 
-                Text("Alarm setup coming next ✅")
-                    .padding(.top)
+                if !alarmIsSet {
+                    Button(action: {
+                        alarmIsSet = true
+                        print("Alarm set for:", selectedStation?.name ?? "")
+                    }) {
+                        Text("Set Alarm")
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                    }
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 50))
+                            .foregroundColor(.green)
+                        
+                        Text("Alarm is active ✅")
+                            .font(.title3)
+                        
+                        Button("Cancel Alarm") {
+                            alarmIsSet = false
+                        }
+                        .foregroundColor(.red)
+                        .padding(.top)
+                    }
+                }
                 
                 Button("Back") {
                     step = 2
+                    alarmIsSet = false
                 }
                 .padding(.top)
             }
