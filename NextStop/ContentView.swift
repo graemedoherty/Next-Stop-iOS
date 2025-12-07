@@ -1,6 +1,7 @@
 import SwiftUI
 
-// MARK: - Models
+// MARK: - Transport Mode
+
 
 enum TransportMode: String, CaseIterable, Identifiable {
     case train = "Train"
@@ -10,10 +11,49 @@ enum TransportMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+// MARK: - Models (MATCH YOUR JSON)
+
 struct Station: Identifiable {
     let id = UUID()
-    let name: String
+    let lat: String
+    let long: String
+    let destination: String
     let mode: TransportMode
+}
+
+struct RawStation: Decodable {
+    let lat: String
+    let long: String
+    let destination: String
+}
+
+// MARK: - JSON Loader (NO SUBDIRECTORY)
+
+func loadStations(from fileName: String, mode: TransportMode) -> [Station] {
+    guard let url = Bundle.main.url(
+        forResource: fileName,
+        withExtension: "json"
+    ) else {
+        print("❌ Failed to find \(fileName).json")
+        return []
+    }
+
+    do {
+        let data = try Data(contentsOf: url)
+        let decoded = try JSONDecoder().decode([RawStation].self, from: data)
+
+        return decoded.map {
+            Station(
+                lat: $0.lat,
+                long: $0.long,
+                destination: $0.destination,
+                mode: mode
+            )
+        }
+    } catch {
+        print("❌ Error decoding \(fileName):", error)
+        return []
+    }
 }
 
 // MARK: - Main View
@@ -26,22 +66,19 @@ struct ContentView: View {
     @State private var selectedStation: Station? = nil
     @State private var alarmIsSet: Bool = false
     
-    // Mock station data
-    let mockStations: [Station] = [
-        Station(name: "Heuston", mode: .train),
-        Station(name: "Connolly", mode: .train),
-        Station(name: "Pearse", mode: .train),
-        Station(name: "Tallaght", mode: .luas),
-        Station(name: "Sandyford", mode: .luas),
-        Station(name: "O'Connell Street", mode: .bus),
-        Station(name: "Stillorgan", mode: .bus)
-    ]
+    // ✅ REAL DATA LOADING (TRAIN + LUAS + BUS)
+    let allStations: [Station] = {
+        let trains = loadStations(from: "trainData", mode: .train)
+        let luas = loadStations(from: "luasData", mode: .luas)
+        let buses = loadStations(from: "dublinbus", mode: .bus)
+        return trains + luas + buses
+    }()
     
     var filteredStations: [Station] {
         guard searchText.count >= 3, let mode = selectedMode else { return [] }
-        return mockStations.filter {
+        return allStations.filter {
             $0.mode == mode &&
-            $0.name.lowercased().contains(searchText.lowercased())
+            $0.destination.lowercased().contains(searchText.lowercased())
         }
     }
     
@@ -60,14 +97,14 @@ struct ContentView: View {
                 .padding(.horizontal)
                 .padding(.top, 20)
                 
-                // MARK: - STEP 1
+                // STEP 1
                 if step == 1 {
                     Step1View(selectedMode: $selectedMode) {
                         step = 2
                     }
                 }
                 
-                // MARK: - STEP 2
+                // STEP 2
                 if step == 2 {
                     Step2View(
                         searchText: $searchText,
@@ -81,7 +118,7 @@ struct ContentView: View {
                     }
                 }
                 
-                // MARK: - STEP 3
+                // STEP 3
                 if step == 3 {
                     Step3View(
                         station: selectedStation,
@@ -99,8 +136,8 @@ struct ContentView: View {
             // ✅ Bottom Alarm Card
             if alarmIsSet, let station = selectedStation {
                 AlarmBottomCard(
-                    stationName: station.name,
-                    distance: "1.2 km", // ✅ Dummy for now
+                    stationName: station.destination,
+                    distance: "13.2 km", // Dummy for now
                     cancelAction: {
                         alarmIsSet = false
                     }
@@ -111,7 +148,7 @@ struct ContentView: View {
     }
 }
 
-// MARK: - STEP 1 VIEW
+// MARK: - Step 1 View
 
 struct Step1View: View {
     @Binding var selectedMode: TransportMode?
@@ -119,8 +156,8 @@ struct Step1View: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Step 1").font(.headline).padding(.horizontal)
-            Text("Please select your mode of transport").font(.title3).padding(.horizontal)
+            Text("Step 1: Select mode of transport").font(.headline).padding(.horizontal)
+//            Text("Please select your mode of transport").font(.title3).padding(.horizontal)
             
             ForEach(TransportMode.allCases) { mode in
                 Button {
@@ -152,7 +189,7 @@ struct Step1View: View {
     }
 }
 
-// MARK: - STEP 2 VIEW
+// MARK: - Step 2 View
 
 struct Step2View: View {
     @Binding var searchText: String
@@ -162,8 +199,8 @@ struct Step2View: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Step 2").font(.headline).padding(.horizontal)
-            Text("Select your destination station").font(.title3).padding(.horizontal)
+            Text("Step 2: Select your destination ").font(.headline).padding(.horizontal)
+//            Text("Select your destination station").font(.title3).padding(.horizontal)
             
             HStack {
                 TextField("Type at least 3 letters...", text: $searchText)
@@ -179,7 +216,7 @@ struct Step2View: View {
                     selectAction(station)
                 } label: {
                     HStack {
-                        Text(station.name)
+                        Text(station.destination)
                         Spacer()
                         Image(systemName: "chevron.right")
                     }
@@ -195,7 +232,7 @@ struct Step2View: View {
     }
 }
 
-// MARK: - STEP 3 VIEW
+// MARK: - Step 3 View
 
 struct Step3View: View {
     let station: Station?
@@ -204,12 +241,12 @@ struct Step3View: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Step 3").font(.headline).padding(.horizontal)
+            Text("Step 3: Set Alarm").font(.headline).padding(.horizontal)
             
-            if let station = station {
-                Text("Your destination:").padding(.horizontal)
-                Text(station.name).font(.title2).bold().padding(.horizontal)
-            }
+//            if let station = station {
+//                Text("Your destination:").padding(.horizontal)
+//                Text(station.destination).font(.title2).bold().padding(.horizontal)
+//            }
             
             if !alarmIsSet {
                 Button("Set Alarm") {
@@ -239,7 +276,7 @@ struct AlarmBottomCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Alarm Active").foregroundColor(.green).font(.caption)
                     Text(stationName).font(.headline)
                     Text("Distance: \(distance)").font(.subheadline).foregroundColor(.gray)
@@ -260,8 +297,10 @@ struct AlarmBottomCard: View {
         .padding()
         .shadow(radius: 10)
         .frame(maxWidth: .infinity)
-        .position(x: UIScreen.main.bounds.width / 2,
-                  y: UIScreen.main.bounds.height - 100)
+        .position(
+            x: UIScreen.main.bounds.width / 2,
+            y: UIScreen.main.bounds.height - 110
+        )
     }
 }
 
@@ -283,4 +322,3 @@ struct StepCircle: View {
 #Preview {
     ContentView()
 }
-
