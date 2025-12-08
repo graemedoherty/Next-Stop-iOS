@@ -4,7 +4,6 @@ import CoreLocation
 import Combine
 
 // MARK: - Transport Mode
-
 enum TransportMode: String, CaseIterable, Identifiable {
     case train = "Train"
     case luas = "Luas"
@@ -73,17 +72,31 @@ struct MapViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView()
         
+        // Add user location with annotation
         let userAnnotation = MKPointAnnotation()
         userAnnotation.coordinate = userLocation
         userAnnotation.title = "You"
         map.addAnnotation(userAnnotation)
         
+        // Add station annotation
         let stationCoord = CLLocationCoordinate2D(latitude: stationLat, longitude: stationLong)
         let stationAnnotation = MKPointAnnotation()
         stationAnnotation.coordinate = stationCoord
         stationAnnotation.title = stationName
         map.addAnnotation(stationAnnotation)
         
+        // Add polyline between the two points
+        let polyline = MKPolyline(coordinates: [userLocation, stationCoord], count: 2)
+        map.addOverlay(polyline)
+        
+        // Add pulsating circles around markers
+        let userCircle = MKCircle(center: userLocation, radius: 500)
+        map.addOverlay(userCircle)
+        
+        let stationCircle = MKCircle(center: stationCoord, radius: 500)
+        map.addOverlay(stationCircle)
+        
+        // Set region to show both
         let centerLat = (userLocation.latitude + stationLat) / 2
         let centerLong = (userLocation.longitude + stationLong) / 2
         
@@ -99,10 +112,67 @@ struct MapViewRepresentable: UIViewRepresentable {
         )
         map.setRegion(region, animated: true)
         
+        // Set delegate to handle rendering
+        map.delegate = context.coordinator
+        
         return map
     }
     
     func updateUIView(_ uiView: MKMapView, context: Context) {}
+    
+    func makeCoordinator() -> MapCoordinator {
+        MapCoordinator()
+    }
+}
+
+// MARK: - Map Coordinator for Polyline and Circles
+
+class MapCoordinator: NSObject, MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if let polyline = overlay as? MKPolyline {
+            let renderer = MKPolylineRenderer(polyline: polyline)
+            renderer.strokeColor = .systemBlue
+            renderer.lineWidth = 3
+            renderer.lineDashPattern = [5, 5]
+            return renderer
+        }
+        
+        if let circle = overlay as? MKCircle {
+            let renderer = MKCircleRenderer(circle: circle)
+            renderer.strokeColor = .systemBlue
+            renderer.fillColor = UIColor.systemBlue.withAlphaComponent(0.2)
+            renderer.lineWidth = 2
+            return renderer
+        }
+        
+        return MKOverlayRenderer()
+    }
+}
+
+// MARK: - Black & White Map Container
+
+struct BlackAndWhiteMapView: View {
+    let userLocation: CLLocationCoordinate2D
+    let stationLat: Double
+    let stationLong: Double
+    let stationName: String
+    
+    var body: some View {
+        ZStack {
+            MapViewRepresentable(
+                userLocation: userLocation,
+                stationLat: stationLat,
+                stationLong: stationLong,
+                stationName: stationName
+            )
+            
+            // Black and white overlay using blend modes
+            Rectangle()
+                .fill(.black)
+                .blendMode(.saturation)
+                .opacity(0.8)
+        }
+    }
 }
 
 // MARK: - JSON Loader
@@ -166,7 +236,7 @@ struct ContentView: View {
                 
                 let testLocation = CLLocationCoordinate2D(latitude: 53.3498, longitude: -6.2603)
                 
-                MapViewRepresentable(
+                BlackAndWhiteMapView(
                     userLocation: testLocation,
                     stationLat: stationLat,
                     stationLong: stationLong,
@@ -397,6 +467,8 @@ struct AlarmBottomCard: View {
     let distance: String
     var cancelAction: () -> Void
     
+    @State private var isAnimating = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -423,13 +495,32 @@ struct AlarmBottomCard: View {
         .padding()
         .background(.ultraThinMaterial)
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.green.opacity(isAnimating ? 0.8 : 0.3),
+                            Color.green.opacity(isAnimating ? 0.3 : 0.8)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
+        .shadow(color: Color.green.opacity(0.3), radius: 10)
         .padding()
-        .shadow(radius: 10)
         .frame(maxWidth: .infinity)
         .position(
             x: UIScreen.main.bounds.width / 2,
             y: UIScreen.main.bounds.height - 110
         )
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
     }
 }
 
@@ -452,4 +543,3 @@ struct StepCircle: View {
 #Preview {
     ContentView()
 }
-
