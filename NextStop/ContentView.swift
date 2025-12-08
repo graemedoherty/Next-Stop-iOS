@@ -11,6 +11,9 @@ struct ContentView: View {
     @State private var selectedStation: Station? = nil
     @State private var alarmIsSet: Bool = false
 
+    // ✅ NEW: Alert state
+    @State private var showCancelAlert: Bool = false
+
     let allStations: [Station] = {
         let trains = loadStations(from: "trainData", mode: .train)
         let luas = loadStations(from: "luasData", mode: .luas)
@@ -23,6 +26,17 @@ struct ContentView: View {
         return allStations.filter {
             $0.mode == mode
                 && $0.destination.lowercased().contains(searchText.lowercased())
+        }
+    }
+
+    // ✅ NEW: Full reset function
+    private func resetAppToStep1() {
+        withAnimation(.spring()) {
+            alarmIsSet = false
+            step = 1
+            selectedMode = nil
+            selectedStation = nil
+            searchText = ""
         }
     }
 
@@ -131,15 +145,14 @@ struct ContentView: View {
                 }
             }
 
-            // Animated Bottom Alarm Card
+            // ✅ Animated Bottom Alarm Card
             if alarmIsSet, let station = selectedStation {
                 AlarmBottomCard(
                     stationName: station.destination,
                     distance: "13.2 km",
                     cancelAction: {
-                        withAnimation(.spring()) {
-                            alarmIsSet = false
-                        }
+                        // ✅ NOW SHOWS ALERT INSTEAD OF IMMEDIATE CANCEL
+                        showCancelAlert = true
                     }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -147,9 +160,21 @@ struct ContentView: View {
         }
         .preferredColorScheme(.dark)
         .animation(.spring(), value: alarmIsSet)
+
+        // ✅ CANCEL CONFIRMATION ALERT
+        .alert("Cancel Alarm?", isPresented: $showCancelAlert) {
+            Button("No", role: .cancel) { }
+
+            Button("Yes, Cancel", role: .destructive) {
+                resetAppToStep1()
+            }
+        } message: {
+            Text("Are you sure you want to cancel your current alarm?")
+        }
     }
 }
 
 #Preview {
     ContentView()
 }
+
