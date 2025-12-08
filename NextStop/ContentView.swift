@@ -1,241 +1,44 @@
-import SwiftUI
-import MapKit
-import CoreLocation
 import Combine
-
-// MARK: - Transport Mode
-enum TransportMode: String, CaseIterable, Identifiable {
-    case train = "Train"
-    case luas = "Luas"
-    case bus = "Bus"
-    
-    var id: String { rawValue }
-}
-
-// MARK: - Models
-
-struct Station: Identifiable {
-    let id = UUID()
-    let lat: String
-    let long: String
-    let destination: String
-    let mode: TransportMode
-}
-
-struct RawStation: Decodable {
-    let lat: String
-    let long: String
-    let destination: String
-}
-
-// MARK: - Location Manager
-
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var userLocation: CLLocationCoordinate2D?
-    
-    private let locationManager = CLLocationManager()
-    
-    override init() {
-        super.init()
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-    }
-    
-    func requestLocationPermission() {
-        locationManager.requestWhenInUseAuthorization()
-    }
-    
-    func startUpdatingLocation() {
-        locationManager.startUpdatingLocation()
-    }
-    
-    func stopUpdatingLocation() {
-        locationManager.stopUpdatingLocation()
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        DispatchQueue.main.async {
-            self.userLocation = location.coordinate
-        }
-    }
-}
-
-// MARK: - Map View
-
-struct MapViewRepresentable: UIViewRepresentable {
-    let userLocation: CLLocationCoordinate2D
-    let stationLat: Double
-    let stationLong: Double
-    let stationName: String
-    
-    func makeUIView(context: Context) -> MKMapView {
-        let map = MKMapView()
-        
-        // Add user location with annotation
-        let userAnnotation = MKPointAnnotation()
-        userAnnotation.coordinate = userLocation
-        userAnnotation.title = "You"
-        map.addAnnotation(userAnnotation)
-        
-        // Add station annotation
-        let stationCoord = CLLocationCoordinate2D(latitude: stationLat, longitude: stationLong)
-        let stationAnnotation = MKPointAnnotation()
-        stationAnnotation.coordinate = stationCoord
-        stationAnnotation.title = stationName
-        map.addAnnotation(stationAnnotation)
-        
-        // Add polyline between the two points
-        let polyline = MKPolyline(coordinates: [userLocation, stationCoord], count: 2)
-        map.addOverlay(polyline)
-        
-        // Add pulsating circles around markers
-        let userCircle = MKCircle(center: userLocation, radius: 500)
-        map.addOverlay(userCircle)
-        
-        let stationCircle = MKCircle(center: stationCoord, radius: 500)
-        map.addOverlay(stationCircle)
-        
-        // Set region to show both
-        let centerLat = (userLocation.latitude + stationLat) / 2
-        let centerLong = (userLocation.longitude + stationLong) / 2
-        
-        let latDelta = abs(userLocation.latitude - stationLat) * 1.5
-        let longDelta = abs(userLocation.longitude - stationLong) * 1.5
-        
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLong),
-            span: MKCoordinateSpan(
-                latitudeDelta: max(latDelta, 0.01),
-                longitudeDelta: max(longDelta, 0.01)
-            )
-        )
-        map.setRegion(region, animated: true)
-        
-        // Set delegate to handle rendering
-        map.delegate = context.coordinator
-        
-        return map
-    }
-    
-    func updateUIView(_ uiView: MKMapView, context: Context) {}
-    
-    func makeCoordinator() -> MapCoordinator {
-        MapCoordinator()
-    }
-}
-
-// MARK: - Map Coordinator for Polyline and Circles
-
-class MapCoordinator: NSObject, MKMapViewDelegate {
-    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-        if let polyline = overlay as? MKPolyline {
-            let renderer = MKPolylineRenderer(polyline: polyline)
-            renderer.strokeColor = .systemBlue
-            renderer.lineWidth = 3
-            renderer.lineDashPattern = [5, 5]
-            return renderer
-        }
-        
-        if let circle = overlay as? MKCircle {
-            let renderer = MKCircleRenderer(circle: circle)
-            renderer.strokeColor = .systemBlue
-            renderer.fillColor = UIColor.systemBlue.withAlphaComponent(0.2)
-            renderer.lineWidth = 2
-            return renderer
-        }
-        
-        return MKOverlayRenderer()
-    }
-}
-
-// MARK: - Black & White Map Container
-
-struct BlackAndWhiteMapView: View {
-    let userLocation: CLLocationCoordinate2D
-    let stationLat: Double
-    let stationLong: Double
-    let stationName: String
-    
-    var body: some View {
-        ZStack {
-            MapViewRepresentable(
-                userLocation: userLocation,
-                stationLat: stationLat,
-                stationLong: stationLong,
-                stationName: stationName
-            )
-            
-            // Black and white overlay using blend modes
-            Rectangle()
-                .fill(.black)
-                .blendMode(.saturation)
-                .opacity(0.8)
-        }
-    }
-}
-
-// MARK: - JSON Loader
-
-func loadStations(from fileName: String, mode: TransportMode) -> [Station] {
-    guard let url = Bundle.main.url(
-        forResource: fileName,
-        withExtension: "json"
-    ) else {
-        return []
-    }
-
-    do {
-        let data = try Data(contentsOf: url)
-        let decoded = try JSONDecoder().decode([RawStation].self, from: data)
-
-        return decoded.map {
-            Station(
-                lat: $0.lat,
-                long: $0.long,
-                destination: $0.destination,
-                mode: mode
-            )
-        }
-    } catch {
-        return []
-    }
-}
-
-// MARK: - Main View
+import CoreLocation
+import MapKit
+import SwiftUI
 
 struct ContentView: View {
     @State private var selectedMode: TransportMode? = nil
     @State private var step: Int = 1
-    
+
     @State private var searchText: String = ""
     @State private var selectedStation: Station? = nil
     @State private var alarmIsSet: Bool = false
-    
+
     let allStations: [Station] = {
         let trains = loadStations(from: "trainData", mode: .train)
         let luas = loadStations(from: "luasData", mode: .luas)
         let buses = loadStations(from: "dublinbus", mode: .bus)
         return trains + luas + buses
     }()
-    
+
     var filteredStations: [Station] {
         guard searchText.count >= 3, let mode = selectedMode else { return [] }
         return allStations.filter {
-            $0.mode == mode &&
-            $0.destination.lowercased().contains(searchText.lowercased())
+            $0.mode == mode
+                && $0.destination.lowercased().contains(searchText.lowercased())
         }
     }
-    
+
     var body: some View {
         ZStack {
             // Map when alarm is active
             if alarmIsSet,
-               let stationLat = Double(selectedStation?.lat ?? ""),
-               let stationLong = Double(selectedStation?.long ?? "") {
-                
-                let testLocation = CLLocationCoordinate2D(latitude: 53.3498, longitude: -6.2603)
-                
+                let stationLat = Double(selectedStation?.lat ?? ""),
+                let stationLong = Double(selectedStation?.long ?? "")
+            {
+
+                let testLocation = CLLocationCoordinate2D(
+                    latitude: 53.443,
+                    longitude: -6.143
+                )
+
                 BlackAndWhiteMapView(
                     userLocation: testLocation,
                     stationLat: stationLat,
@@ -245,23 +48,27 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.all)
                 .transition(.opacity)
             }
-            
+
             if !alarmIsSet {
                 VStack(alignment: .leading, spacing: 24) {
-                    
-                    // Progress Indicator (unchanged UI)
+
+                    // Progress Indicator
                     HStack {
                         StepCircle(number: 1, isActive: step >= 1)
-                        Rectangle().frame(height: 3).opacity(step >= 2 ? 1 : 0.3)
+                        Rectangle().frame(height: 3).opacity(
+                            step >= 2 ? 1 : 0.3
+                        )
                         StepCircle(number: 2, isActive: step >= 2)
-                        Rectangle().frame(height: 3).opacity(step >= 3 ? 1 : 0.3)
+                        Rectangle().frame(height: 3).opacity(
+                            step >= 3 ? 1 : 0.3
+                        )
                         StepCircle(number: 3, isActive: step >= 3)
                     }
                     .padding(.horizontal)
                     .padding(.top, 20)
                     .animation(.spring(), value: step)
 
-                    // ✅ Animated step switching WITH asymmetric transitions
+                    // Step Views with Transitions
                     ZStack {
                         if step == 1 {
                             Step1View(selectedMode: $selectedMode) {
@@ -269,9 +76,14 @@ struct ContentView: View {
                                     step = 2
                                 }
                             }
-                            .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .trailing),
+                                    removal: .move(edge: .leading)
+                                )
+                            )
                         }
-                        
+
                         if step == 2 {
                             Step2View(
                                 searchText: $searchText,
@@ -287,9 +99,14 @@ struct ContentView: View {
                                     searchText = ""
                                 }
                             }
-                            .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .trailing),
+                                    removal: .move(edge: .leading)
+                                )
+                            )
                         }
-                        
+
                         if step == 3 {
                             Step3View(
                                 station: selectedStation,
@@ -301,15 +118,20 @@ struct ContentView: View {
                                     }
                                 }
                             )
-                            .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .trailing),
+                                    removal: .move(edge: .leading)
+                                )
+                            )
                         }
                     }
-                    
+
                     Spacer()
                 }
             }
-            
-            // ✅ Animated Bottom Alarm Card
+
+            // Animated Bottom Alarm Card
             if alarmIsSet, let station = selectedStation {
                 AlarmBottomCard(
                     stationName: station.destination,
@@ -325,218 +147,6 @@ struct ContentView: View {
         }
         .preferredColorScheme(.dark)
         .animation(.spring(), value: alarmIsSet)
-    }
-}
-
-// MARK: - Step 1 View
-
-struct Step1View: View {
-    @Binding var selectedMode: TransportMode?
-    var nextAction: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 1: Select mode of transport")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            ForEach(TransportMode.allCases) { mode in
-                Button {
-                    selectedMode = mode
-                } label: {
-                    HStack {
-                        Text(mode.rawValue).font(.headline)
-                        Spacer()
-                        if selectedMode == mode {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                        }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(
-                                selectedMode == mode ? Color.green : Color.gray,
-                                lineWidth: 2
-                            )
-                    )
-                }
-                .padding(.horizontal)
-            }
-            
-            Button("Next", action: nextAction)
-                .disabled(selectedMode == nil)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(selectedMode == nil ? Color.gray : Color.blue)
-                .cornerRadius(14)
-                .padding(.horizontal)
-        }
-    }
-}
-
-// MARK: - Step 2 View
-
-struct Step2View: View {
-    @Binding var searchText: String
-    let filteredStations: [Station]
-    var selectAction: (Station) -> Void
-    var backAction: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 2: Select your destination ")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            HStack {
-                TextField("Type at least 3 letters...", text: $searchText)
-                    .foregroundColor(.white)
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.gray, lineWidth: 2)
-            )
-            .padding(.horizontal)
-            
-            ForEach(filteredStations) { station in
-                Button {
-                    selectAction(station)
-                } label: {
-                    HStack {
-                        Text(station.destination)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.gray, lineWidth: 2)
-                    )
-                }
-                .padding(.horizontal)
-            }
-            
-            Button("Back", action: backAction)
-                .padding(.horizontal)
-        }
-    }
-}
-
-// MARK: - Step 3 View
-
-struct Step3View: View {
-    let station: Station?
-    @Binding var alarmIsSet: Bool
-    var backAction: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 3: Set Alarm")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            if !alarmIsSet {
-                Button("Set Alarm") {
-                    withAnimation(.spring()) {
-                        alarmIsSet = true
-                    }
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.green)
-                .cornerRadius(14)
-                .padding(.horizontal)
-            }
-            
-            Button("Back", action: backAction)
-                .padding(.horizontal)
-        }
-    }
-}
-
-// MARK: - Bottom Alarm Card
-
-struct AlarmBottomCard: View {
-    let stationName: String
-    let distance: String
-    var cancelAction: () -> Void
-    
-    @State private var isAnimating = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Alarm Active")
-                        .foregroundColor(.green)
-                        .font(.caption)
-                    Text(stationName)
-                        .font(.headline)
-                    Text("Distance: \(distance)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Button(action: cancelAction) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title)
-                        .foregroundColor(.red)
-                }
-            }
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.green.opacity(isAnimating ? 0.8 : 0.3),
-                            Color.green.opacity(isAnimating ? 0.3 : 0.8)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2
-                )
-        )
-        .shadow(color: Color.green.opacity(0.3), radius: 10)
-        .padding()
-        .frame(maxWidth: .infinity)
-        .position(
-            x: UIScreen.main.bounds.width / 2,
-            y: UIScreen.main.bounds.height - 110
-        )
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                isAnimating = true
-            }
-        }
-    }
-}
-
-// MARK: - Step Circle
-
-struct StepCircle: View {
-    let number: Int
-    let isActive: Bool
-    
-    var body: some View {
-        Text("\(number)")
-            .frame(width: 36, height: 36)
-            .background(isActive ? Color.blue : Color.gray.opacity(0.3))
-            .foregroundColor(.white)
-            .clipShape(Circle())
-            .animation(.spring(), value: isActive)
     }
 }
 
