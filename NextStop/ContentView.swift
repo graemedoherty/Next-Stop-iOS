@@ -6,7 +6,6 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedMode: TransportMode? = nil
     @State private var step: Int = 1
-
     @State private var searchText: String = ""
     @State private var selectedStation: Station? = nil
     @State private var alarmIsSet: Bool = false
