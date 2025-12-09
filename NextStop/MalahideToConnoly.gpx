@@ -1,0 +1,44 @@
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<gpx version="1.1" creator="NextStopTest" xmlns="http://www.topografix.com/GPX/1/1">-->
+<!--  <trk>-->
+<!--    <name>Malahide to Connolly - test route</name>-->
+<!--    <trkseg>-->
+<!--      <trkpt lat="53.4509" lon="-6.1501"></trkpt>-->
+<!--      <trkpt lat="53.4400" lon="-6.1700"></trkpt>-->
+<!--      <trkpt lat="53.4300" lon="-6.1900"></trkpt>-->
+<!--      <trkpt lat="53.4200" lon="-6.2100"></trkpt>-->
+<!--      <trkpt lat="53.4100" lon="-6.2300"></trkpt>-->
+<!--      <trkpt lat="53.4000" lon="-6.2450"></trkpt>-->
+<!--      <trkpt lat="53.3900" lon="-6.2500"></trkpt>-->
+<!--      <trkpt lat="53.3800" lon="-6.2550"></trkpt>-->
+<!--      <trkpt lat="53.3700" lon="-6.2580"></trkpt>-->
+<!--      <trkpt lat="53.3600" lon="-6.2590"></trkpt>-->
+<!--      <trkpt lat="53.3498" lon="-6.2603"></trkpt>-->
+<!--    </trkseg>-->
+<!--  </trk>-->
+<!--</gpx>-->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="Open GPX Tracker for iOS">
+  <wpt lat="40.762468446233115" lon="-73.99090283852468">
+    <time>2019-12-06T14:19:25Z</time>
+    <name>Point 1</name>
+    <desc>Description of point 1</desc>
+  </wpt>
+  <wpt lat="40.80559910750484" lon="-73.95810627601767">
+    <time>2019-12-06T14:19:29Z</time>
+    <name>Point 2</name>
+    <desc>Description of point 2</desc>
+  </wpt>
+  <wpt lat="40.767588954221175" lon="-73.9539347834181">
+    <time>2019-12-06T14:19:31Z</time>
+    <name>Point 3</name>
+    <desc>Description of point 3</desc>
+  </wpt>
+  <wpt lat="40.72268937145068" lon="-73.99262897339348">
+     <time>2019-12-06T14:19:36Z</time>
+     <name>Point 4</name>
+     <desc>Description of point 4</desc>
+  </wpt>
+</gpx>

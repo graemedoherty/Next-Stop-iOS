@@ -1,10 +1,3 @@
-//
-//  StationDataLoader.swift
-//  NextStop
-//
-//  Created by Graeme Doherty on 08/12/2025.
-//
-
 import Foundation
 
 func loadStations(from fileName: String, mode: TransportMode) -> [Station] {
