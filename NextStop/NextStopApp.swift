@@ -1,17 +1,13 @@
-//
-//  NextStopApp.swift
-//  NextStop
-//
-//  Created by Graeme Doherty on 04/12/2025.
-//
-
 import SwiftUI
 
 @main
 struct NextStopApp: App {
+    @StateObject private var locationManager = LocationManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(locationManager)
         }
     }
 }

@@ -9,23 +9,19 @@ import SwiftUI
 
 struct AlarmBottomCard: View {
     let stationName: String
-    let distance: String
+    let distanceMeters: Double
     var cancelAction: () -> Void
     
     @State private var isAnimating = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
+            // ✅ TOP ROW: Alarm Active + X Button
             HStack {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Alarm Active")
                         .foregroundColor(.green)
                         .font(.caption)
-                    Text(stationName)
-                        .font(.headline)
-                    Text("Distance: \(distance)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
                 }
                 
                 Spacer()
@@ -36,9 +32,29 @@ struct AlarmBottomCard: View {
                         .foregroundColor(.red)
                 }
             }
+            .padding(.bottom, 1)
+            
+            // ✅ LARGE DISTANCE DISPLAY
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Distance")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                Text("\(String(format: "%.0f", distanceMeters))m")
+                    .font(.system(size: 40, weight: .bold, design: .default))
+                    .foregroundColor(.green)
+            }
+            
+            // ✅ STATION INFO
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Station")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                Text(stationName)
+                    .font(.headline)
+            }
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Color.black.opacity(0.3))
         .cornerRadius(20)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
@@ -59,7 +75,7 @@ struct AlarmBottomCard: View {
         .frame(maxWidth: .infinity)
         .position(
             x: UIScreen.main.bounds.width / 2,
-            y: UIScreen.main.bounds.height - 110
+            y: UIScreen.main.bounds.height - 200 // ✅ Moved up slightly for more visible space
         )
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
@@ -68,4 +84,3 @@ struct AlarmBottomCard: View {
         }
     }
 }
-

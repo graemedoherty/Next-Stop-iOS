@@ -1,13 +1,5 @@
-//
-//  BlackAndWhiteMapView.swift
-//  NextStop
-//
-//  Created by Graeme Doherty on 08/12/2025.
-//
-
 import SwiftUI
 import MapKit
-import CoreLocation
 
 struct BlackAndWhiteMapView: View {
     let userLocation: CLLocationCoordinate2D

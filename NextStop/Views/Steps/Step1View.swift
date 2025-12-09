@@ -5,7 +5,6 @@
 //  Created by Graeme Doherty on 08/12/2025.
 //
 
-
 import SwiftUI
 
 struct Step1View: View {
@@ -39,6 +38,8 @@ struct Step1View: View {
                             )
                     )
                 }
+                .disabled(mode == .bus)  // ✅ DISABLE BUS
+                .opacity(mode == .bus ? 0.5 : 1)  // ✅ FADE IT OUT
                 .padding(.horizontal)
             }
             
