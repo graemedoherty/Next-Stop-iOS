@@ -2,17 +2,28 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict/>
-    </array>
+    <!-- Background location permissions -->
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>This app uses your location to show your position on the map and alert you when approaching your stop.</string>
+
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app needs access to your location even when closed to alert you about upcoming stops.</string>
+
+    <!-- Background modes -->
     <key>UIBackgroundModes</key>
     <array>
         <string>location</string>
     </array>
+
+    <!-- Live Activities & Widgets -->
+    <key>NSUserTrackingUsageDescription</key>
+    <string>Your live activity shows real-time progress towards your stop.</string>
+
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- Required for Live Activity widget extension -->
+    <key>WidgetKitEnableLiveActivity</key>
+    <true/>
 </dict>
 </plist>

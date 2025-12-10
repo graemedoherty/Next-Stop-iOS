@@ -9,6 +9,7 @@ import SwiftUI
 import CoreLocation
 import MapKit
 import Combine
+import Foundation
 
 
 struct ContentView: View {
@@ -171,17 +172,30 @@ struct ContentView: View {
             if newValue {
                 if let station = selectedStation {
                     locationManager.setDestinationStation(station)
-                    locationManager.startSimulatingJourney()  // ✅ START SIMULATION
+                    // start live activity (mode can be .train/.luas/.bus string)
+                    locationManager.startLiveActivity(for: station, modeDisplayName: selectedMode?.rawValue ?? "Train")
+
                     locationManager.onAlarmTriggered = {
                         print("🔔 ALARM TRIGGERED - Station approaching!")
                         showAlarmTriggeredAlert = true
+                        // live activity will be ended by LocationManager on trigger
                     }
+
+                    // If you are simulating, kick off simulator
+                    #if targetEnvironment(simulator)
+                    locationManager.startSimulatingJourney()
+                    #else
+                    // on device, real location updates will start via locationManagerDidChangeAuthorization
+                    locationManager.startUpdating()
+                    #endif
                 }
             } else {
                 locationManager.clearDestination()
                 locationManager.stopAlarmSound()
+                // end activity will be called inside clearDestination()
             }
         }
+
         // Cancel confirmation alert
         .alert("Cancel Alarm?", isPresented: $showCancelAlert) {
             Button("No", role: .cancel) { }
