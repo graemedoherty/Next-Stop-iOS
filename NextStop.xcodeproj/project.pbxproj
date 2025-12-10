@@ -6,7 +6,40 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		958AEE3C2EE9AD960085221A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 958AEE3B2EE9AD960085221A /* WidgetKit.framework */; };
+		958AEE3E2EE9AD960085221A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 958AEE3D2EE9AD960085221A /* SwiftUI.framework */; };
+		958AEE4D2EE9AD9A0085221A /* StatusWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 958AEE392EE9AD950085221A /* StatusWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		958AEE4B2EE9AD9A0085221A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 959CE34D2EE1E66100922FC8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 958AEE382EE9AD950085221A;
+			remoteInfo = StatusWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		958AEE522EE9AD9A0085221A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				958AEE4D2EE9AD9A0085221A /* StatusWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		958AEE392EE9AD950085221A /* StatusWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StatusWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		958AEE3B2EE9AD960085221A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		958AEE3D2EE9AD960085221A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		959CE3552EE1E66100922FC8 /* NextStop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NextStop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -18,13 +51,37 @@
 			);
 			target = 959CE3542EE1E66100922FC8 /* NextStop */;
 		};
+		958AEE512EE9AD9A0085221A /* Exceptions for "StatusWidget" folder in "StatusWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 958AEE382EE9AD950085221A /* StatusWidgetExtension */;
+		};
+		958AEE582EE9C0500085221A /* Exceptions for "NextStop" folder in "StatusWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/NextStopAttributes.swift,
+				Utils/StopActivityAttributes.swift,
+			);
+			target = 958AEE382EE9AD950085221A /* StatusWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		958AEE3F2EE9AD960085221A /* StatusWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				958AEE512EE9AD9A0085221A /* Exceptions for "StatusWidget" folder in "StatusWidgetExtension" target */,
+			);
+			path = StatusWidget;
+			sourceTree = "<group>";
+		};
 		959CE3572EE1E66100922FC8 /* NextStop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				958AEDF52EE85F790085221A /* Exceptions for "NextStop" folder in "NextStop" target */,
+				958AEE582EE9C0500085221A /* Exceptions for "NextStop" folder in "StatusWidgetExtension" target */,
 			);
 			path = NextStop;
 			sourceTree = "<group>";
@@ -32,6 +89,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		958AEE362EE9AD950085221A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				958AEE3E2EE9AD960085221A /* SwiftUI.framework in Frameworks */,
+				958AEE3C2EE9AD960085221A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		959CE3522EE1E66100922FC8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -42,10 +108,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		958AEE3A2EE9AD960085221A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				958AEE3B2EE9AD960085221A /* WidgetKit.framework */,
+				958AEE3D2EE9AD960085221A /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		959CE34C2EE1E66100922FC8 = {
 			isa = PBXGroup;
 			children = (
 				959CE3572EE1E66100922FC8 /* NextStop */,
+				958AEE3F2EE9AD960085221A /* StatusWidget */,
+				958AEE3A2EE9AD960085221A /* Frameworks */,
 				959CE3562EE1E66100922FC8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				959CE3552EE1E66100922FC8 /* NextStop.app */,
+				958AEE392EE9AD950085221A /* StatusWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +139,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		958AEE382EE9AD950085221A /* StatusWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 958AEE4E2EE9AD9A0085221A /* Build configuration list for PBXNativeTarget "StatusWidgetExtension" */;
+			buildPhases = (
+				958AEE352EE9AD950085221A /* Sources */,
+				958AEE362EE9AD950085221A /* Frameworks */,
+				958AEE372EE9AD950085221A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				958AEE3F2EE9AD960085221A /* StatusWidget */,
+			);
+			name = StatusWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = StatusWidgetExtension;
+			productReference = 958AEE392EE9AD950085221A /* StatusWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		959CE3542EE1E66100922FC8 /* NextStop */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 959CE3602EE1E66300922FC8 /* Build configuration list for PBXNativeTarget "NextStop" */;
@@ -68,10 +168,12 @@
 				959CE3512EE1E66100922FC8 /* Sources */,
 				959CE3522EE1E66100922FC8 /* Frameworks */,
 				959CE3532EE1E66100922FC8 /* Resources */,
+				958AEE522EE9AD9A0085221A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				958AEE4C2EE9AD9A0085221A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				959CE3572EE1E66100922FC8 /* NextStop */,
@@ -93,6 +195,9 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					958AEE382EE9AD950085221A = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 					959CE3542EE1E66100922FC8 = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -113,11 +218,19 @@
 			projectRoot = "";
 			targets = (
 				959CE3542EE1E66100922FC8 /* NextStop */,
+				958AEE382EE9AD950085221A /* StatusWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		958AEE372EE9AD950085221A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		959CE3532EE1E66100922FC8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +241,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		958AEE352EE9AD950085221A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		959CE3512EE1E66100922FC8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +257,73 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		958AEE4C2EE9AD9A0085221A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 958AEE382EE9AD950085221A /* StatusWidgetExtension */;
+			targetProxy = 958AEE4B2EE9AD9A0085221A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		958AEE4F2EE9AD9A0085221A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StatusWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StatusWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.graeme.NextStop.StatusWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		958AEE502EE9AD9A0085221A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StatusWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StatusWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.graeme.NextStop.StatusWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		959CE35E2EE1E66300922FC8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -324,6 +510,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		958AEE4E2EE9AD9A0085221A /* Build configuration list for PBXNativeTarget "StatusWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				958AEE4F2EE9AD9A0085221A /* Debug */,
+				958AEE502EE9AD9A0085221A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		959CE3502EE1E66100922FC8 /* Build configuration list for PBXProject "NextStop" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

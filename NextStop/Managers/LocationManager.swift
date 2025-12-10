@@ -1,38 +1,62 @@
+//
+//  LocationManager.swift
+//  NextStop
+//
+//  Created by ChatGPT on 2025-12-10.
+//
+
 import Foundation
 import CoreLocation
-import SwiftUI
+import ActivityKit
 import Combine
 import AVFoundation
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    private var audioPlayer: AVAudioPlayer?
-    private var simulationTimer: Timer?  // ✅ Add this
-
+    // MARK: - Published
     @Published var userLocation: CLLocationCoordinate2D?
-    @Published var authorizationStatus: CLAuthorizationStatus?
     @Published var distanceToStation: Double?
-    @Published var hasTriggeredAlarm: Bool = false
+    @Published var authorizationStatus: CLAuthorizationStatus?
 
-    // Alarm settings
-    var destinationStation: Station?
-    var activationRadius: Double = 100
+    // Alarm callback
     var onAlarmTriggered: (() -> Void)?
+
+    // Destination
+    private(set) var destinationStation: Station?
+
+    // Core Location
+    private let manager = CLLocationManager()
+
+    // Audio (simple alarm placeholder)
+    private var audioPlayer: AVAudioPlayer?
+
+    // Simulation timer (for simulator testing)
+    private var simulationTimer: Timer?
+
+    // Live Activity handle
+    private var currentActivity: Activity<NextStopAttributes>?
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        manager.allowsBackgroundLocationUpdates = false
+        // leave allowsBackgroundLocationUpdates true only if entitlements/info.plist set
+        manager.allowsBackgroundLocationUpdates = true
+        manager.activityType = .automotiveNavigation
     }
 
     // MARK: - Permissions
     func requestLocationPermission() {
         print("📍 Requesting location permission...")
+        // ask for when-in-use first; you can later call requestAlwaysAuthorization() after explaining to user
         manager.requestWhenInUseAuthorization()
     }
 
-    // MARK: - Updating
+    func requestAlwaysPermission() {
+        print("📍 Requesting ALWAYS permission...")
+        manager.requestAlwaysAuthorization()
+    }
+
+    // MARK: - Start / Stop updates
     func startUpdating() {
         print("📍 Starting location updates...")
         manager.startUpdatingLocation()
@@ -41,61 +65,60 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func stopUpdating() {
         print("📍 Stopping location updates...")
         manager.stopUpdatingLocation()
-        simulationTimer?.invalidate()  // ✅ Stop simulation if running
-        simulationTimer = nil
     }
 
-    // MARK: - Destination
+    // MARK: - Destination control (used by ContentView)
     func setDestinationStation(_ station: Station) {
-        print("📍 Set destination: \(station.destination)")
-        self.destinationStation = station
-        self.hasTriggeredAlarm = false
+        print("📍 Destination set: \(station.destination)")
+        destinationStation = station
+        distanceToStation = nil
+        hasTriggered = false
+        // do not start updates here directly; ContentView decides (simulator vs real)
     }
 
     func clearDestination() {
-        print("📍 Cleared destination")
-        self.destinationStation = nil
-        self.hasTriggeredAlarm = false
-        self.distanceToStation = nil
-        simulationTimer?.invalidate()  // ✅ Stop simulation
-        simulationTimer = nil
+        print("📍 Clearing destination")
+        destinationStation = nil
+        distanceToStation = nil
+        stopAlarmSound()
+        stopSimulating()
+        endLiveActivity()
     }
-    
-    // ✅ NEW: Simulate journey for testing
+
+    // MARK: - Simulation (for simulator/testing)
     func startSimulatingJourney() {
         guard let station = destinationStation,
-              let stationLat = Double(station.lat),
-              let stationLong = Double(station.long) else { return }
-        
-        let stationCoord = CLLocationCoordinate2D(latitude: stationLat, longitude: stationLong)
-        
-        // Start from Dublin city center
-        let startLocation = CLLocationCoordinate2D(latitude: 53.4509, longitude: -6.1501)
-        
-        print("🚗 Starting journey simulation from \(startLocation) to \(stationCoord)")
-        
-        simulationTimer = LocationSimulator.simulateJourneyToward(
-            from: startLocation,
-            to: stationCoord,
-            stepMeters: 50
-        ) { [weak self] newLocation in
+              let lat = Double(station.lat),
+              let long = Double(station.long) else {
+            print("No station to simulate to")
+            return
+        }
+
+        let startLocation = CLLocationCoordinate2D(latitude: 53.4509, longitude: -6.1501) // sample start
+        let endLocation = CLLocationCoordinate2D(latitude: lat, longitude: long)
+
+        simulationTimer?.invalidate()
+        simulationTimer = LocationSimulator.simulateJourneyToward(from: startLocation, to: endLocation, stepMeters: 50) { [weak self] coord in
             DispatchQueue.main.async {
-                self?.userLocation = newLocation
-                if let station = self?.destinationStation {
-                    self?.checkDistanceAndTriggerAlarm(userLocation: newLocation, station: station)
-                }
+                self?.userLocation = coord
+                self?.evaluateDistanceAndTriggerIfNeeded()
+                self?.updateLiveActivityIfNeeded()
             }
         }
+        print("🚗 Simulation started")
     }
 
-    // MARK: - Authorization Callbacks
+    func stopSimulating() {
+        simulationTimer?.invalidate()
+        simulationTimer = nil
+    }
+
+    // MARK: - CLLocationManagerDelegate
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
-        print("📍 Authorization changed to: \(manager.authorizationStatus.rawValue)")
-
-        if manager.authorizationStatus == .authorizedWhenInUse ||
-            manager.authorizationStatus == .authorizedAlways {
-            print("✅ Permission GRANTED – safe to start location updates")
+        print("📍 Authorization changed to: \(authorizationStatus?.rawValue ?? -1)")
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            // start updates only if we have a destination (ContentView controls behavior)
             if destinationStation != nil {
                 startUpdating()
             }
@@ -104,17 +127,12 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    // MARK: - Location Updates
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-
+        guard let loc = locations.last else { return }
         DispatchQueue.main.async {
-            self.userLocation = location.coordinate
-            print("📍 User location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
-
-            if let station = self.destinationStation {
-                self.checkDistanceAndTriggerAlarm(userLocation: location.coordinate, station: station)
-            }
+            self.userLocation = loc.coordinate
+            self.evaluateDistanceAndTriggerIfNeeded()
+            self.updateLiveActivityIfNeeded()
         }
     }
 
@@ -122,36 +140,106 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("❌ Location error:", error.localizedDescription)
     }
 
-    // MARK: - Alarm Logic
-    private func checkDistanceAndTriggerAlarm(userLocation: CLLocationCoordinate2D, station: Station) {
-        guard let stationLat = Double(station.lat),
-              let stationLong = Double(station.long) else { return }
+    // MARK: - Distance evaluation & Alarm
+    private var hasTriggered = false
+    var activationRadius: Double = 200 // meters (you used 200 earlier; change as required)
 
-        let stationCoord = CLLocationCoordinate2D(latitude: stationLat, longitude: stationLong)
-        let distance = self.calculateDistance(from: userLocation, to: stationCoord)
+    private func evaluateDistanceAndTriggerIfNeeded() {
+        guard let dest = destinationStation,
+              let userLoc = userLocation,
+              let stationLat = Double(dest.lat),
+              let stationLong = Double(dest.long)
+        else { return }
+
+        let userCL = CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude)
+        let stationCL = CLLocation(latitude: stationLat, longitude: stationLong)
+        let distance = userCL.distance(from: stationCL)
 
         DispatchQueue.main.async {
             self.distanceToStation = distance
-            print("📍 Distance to \(station.destination): \(String(format: "%.0f", distance))m")
         }
 
-        if distance <= self.activationRadius && !self.hasTriggeredAlarm {
+        // Update live activity continuously (handled elsewhere)
+        if distance <= activationRadius && !hasTriggered {
+            hasTriggered = true
+            print("🚨 ALARM TRIGGER at \(Int(distance))m for \(dest.destination)")
+            // fire callback for UI popup in ContentView
             DispatchQueue.main.async {
-                self.hasTriggeredAlarm = true
-                print("🚨 ALARM TRIGGERED at \(String(format: "%.0f", distance))m!")
                 self.onAlarmTriggered?()
             }
+            // play alarm sound (if you want)
+            // playAlarmSound()
+            // end live activity after triggered
+            endLiveActivity()
         }
     }
 
-    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
-        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
-        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
-        return fromLocation.distance(from: toLocation)
+    // MARK: - Audio (optional)
+    func playAlarmSound() {
+        guard let url = Bundle.main.url(forResource: "alarm", withExtension: "mp3") else { return }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Error playing alarm:", error)
+        }
     }
 
     func stopAlarmSound() {
         audioPlayer?.stop()
         audioPlayer = nil
     }
+
+    // MARK: - Live Activity control (ActivityKit)
+    func startLiveActivity(for station: Station, modeDisplayName: String) {
+        let authorizationInfo = ActivityAuthorizationInfo()
+        guard authorizationInfo.areActivitiesEnabled else {
+            print("⚠️ Live Activities not allowed/enabled on device")
+            return
+        }
+
+        // do not start twice
+        if currentActivity != nil { return }
+
+        let attributes = NextStopAttributes(lineName: modeDisplayName, destinationName: station.destination)
+        let initialState = NextStopAttributes.ContentState(distance: "--", status: "On the way")
+
+        do {
+            let activity = try Activity.request(attributes: attributes, contentState: initialState)
+            currentActivity = activity
+            print("✅ Live Activity started: \(activity.id)")
+        } catch {
+            print("❌ Failed to start Live Activity:", error)
+        }
+    }
+
+
+    private func updateLiveActivityIfNeeded() {
+        guard let activity = currentActivity,
+              let userLoc = userLocation,
+              let dest = destinationStation,
+              let lat = Double(dest.lat),
+              let long = Double(dest.long) else { return }
+
+        let userCL = CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude)
+        let stationCL = CLLocation(latitude: lat, longitude: long)
+        let distance = userCL.distance(from: stationCL)
+        let distanceString = String(format: "%.0f m", distance)
+        let statusString = distance < activationRadius ? "Arriving" : "On the way"
+
+        let updated = NextStopAttributes.ContentState(distance: distanceString, status: statusString)
+        Task {
+            await activity.update(using: updated)
+            // no print here to avoid spam
+        }
+    }
+
+    func endLiveActivity() {
+        guard let activity = currentActivity else { return }
+        Task {
+            await activity.end(using: NextStopAttributes.ContentState(distance: "0 m", status: "Arrived"), dismissalPolicy: .immediate)
+        }
+        currentActivity = nil
+    }
 }
+
