@@ -1,3 +1,4 @@
+
 import UserNotifications
 import Foundation
 import UIKit
@@ -64,7 +65,7 @@ class NotificationManager {
         content.title = "Alarm Active"
         content.body = "\(stationName) - \(String(format: "%.0f", distanceMeters))m away"
         content.badge = NSNumber(value: 1)
-        // ✅ NO SOUND - this keeps it silent
+        // NO SOUND - keeps it silent
         content.categoryIdentifier = "ALARM_ACTIONS"
         content.userInfo = [
             "stationName": stationName,
@@ -88,7 +89,6 @@ class NotificationManager {
             if let error = error {
                 print("❌ Error updating notification: \(error.localizedDescription)")
             }
-            // Silent update - no print needed to avoid spam
         }
     }
     
